@@ -1,0 +1,129 @@
+<!-- 
+网络上提供的一些取模软件，多半使用c++写的。写之比较，虽然我写的这个软件不见得很好用（要想好用，还要增加不少代码），但你可以看到，区区几行javascript代码就实现了取模，不觉得javascript挺好用的吗？
+ -->
+<html>
+
+<head>
+    <meta charset="utf8" >
+    <title>12864点阵取模(ks0108)</title>
+    <script language=javascript>
+    function mMove() {
+        var e = window.event,
+            s = '';
+        s = 'clientX=' + e.clientX + ' ' + 'clientY=' + e.clientY + '<br>' + 'screenX=' + e.screenX + ' ' + 'screenY=' + e.screenY + '<br>' + 'offsetX=' + e.offsetX + ' ' + 'offsetY=' + e.offsetY;
+        Cxy.innerHTML = s;
+    }
+
+    function to16(c) {
+        c = c.toString(16);
+        if (c.length < 2) c = '0' + c;
+        return '0x' + c;
+    }
+
+    function mClick() {
+        var e = window.event;
+        var dw = SC.style.lineHeight.replace(/[^0-9]/g, '') - 0; //网格宽度
+        var x = Math.floor(e.offsetX / dw); //网格水平坐标号
+        var y = Math.floor(e.offsetY / dw); //网格竖直坐标号
+        var s = SC.innerText; //字库明码
+        var w = SC.zw; //字宽
+        var h = SC.zh,
+            pn = Math.floor((h - 1) / 8 + 1); //字高,页数
+        var Q = [1, 2, 4, 8, 16, 32, 64, 128]; //位权
+        var i, j, k, c, p = new Array();
+        //更改像素
+        if (x >= w) x = w - 1;
+        if (y >= h) y = h - 1;
+        s = s.split('');
+        i = y * (w + 2) + x;
+        if (s[i] == '·') s[i] = '█';
+        else s[i] = '·';
+        SC.innerText = s.join('');
+        //生成代码
+        for (i = 0; i < pn; i++) { //扫描页
+            for (j = 0; j < w; j++) { //扫描列
+                for (c = 0, k = 0; k < 8; k++) //取字节
+                {
+                    if (s[(i * 8 + k) * (w + 2) + j] == '█') c += Q[k];
+                }
+                p[p.length] = to16(c) + ','; //转为16进制
+                if ((i * w + j) % 16 == 15) p[p.length] = '\r\n';
+            }
+        }
+        Ccs.innerText = p.join('');
+    }
+
+    function setSize() {
+        var i, j, s = '',
+            m;
+        SC.zw = Cw.value - 0;
+        SC.zh = Ch.value - 0;
+        for (i = 0; i < SC.zh; i++) {
+            for (j = 0; j < SC.zw; j++)
+                s += '·';
+            s += '<br>';
+        }
+        m = Cm.value - 0;
+        SC.innerHTML = s;
+        SC.style.letterSpacing = '1px'; //设置字间距
+        SC.style.fontSize = m + 'px'; //设置文字大小
+        SC.style.lineHeight = (m + 1) + 'px'; //设置行高
+        SC.style.width = (m + 2) * SC.zw + 'px'; //设置编辑框的大小
+        SC.style.cursor = 'default'; //设置光标
+    }
+
+    function newF() {
+        setSize();
+        Ccs.innerText = '';
+    }
+
+    function loadF() {
+        var i, j, n, s, f, q = [1, 2, 4, 8, 16, 32, 64, 128];
+        setSize();
+        s = Ccs.innerText + '\r\n';
+        s = s.replace(/\/\/[^\n]*\n/g, '');
+        s = s.replace(/\/\*[^\/]*\*\//g, '');
+        s = s.replace(/\/\*[^\*]*\*\//g, '');
+        s = s.replace(/[^0-9a-fA-FxX,]/g, '');
+        f = s.split(',');
+        w = SC.zw, h = SC.zh;
+        for (s = '', i = 0; i < h; i++) {
+            n = Math.floor(i / 8) * w; //页始
+            for (j = 0; j < w; j++) {
+                if (f[n + j] & q[i % 8]) s += '█';
+                else s += '·';
+            }
+            s += '\r\n';
+        }
+        SC.innerText = s;
+    }
+
+    function loadEx() { //载入样例
+        Cw.value = 24;
+        Ch.value = 32;
+        Ccs.innerText = '0x00,0xc0,0x40,0x40,0x40,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xf0,0x10,\r\n' + '0x10,0x1e,0x10,0x10,0xf0,0x00,0x00,0x00,0x00,0x7f,0x04,0x04,0x0a,0x71,0x00,0x26,\r\n' + '0x49,0x49,0x32,0x00,0x00,0x00,0xff,0x80,0x80,0x80,0x80,0x80,0xff,0x00,0x00,0x00,\r\n' + '0x00,0x80,0x40,0x40,0x40,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x88,0x88,0x88,0x88,\r\n' + '0x88,0x8f,0x88,0x88,0x88,0x88,0x88,0x00,0x00,0x3f,0x40,0x40,0x40,0x20,0x00,0x26,\r\n' + '0x49,0x49,0x32,0x00,0x00,0x00,0x00,0x00,0x00,0x7f,0x00,0x00,0x00,0x00,0x00,0x00,\r\n';
+        loadF();
+    }
+    </script>
+</head>
+
+<body>
+    <font style="font-size:24px"><b>12864图形即时取模器fanyer 2016.3于广州</b></font>
+    <br> 像素大小
+    <input id=Cm type=text size=10 value=16> 字宽
+    <input id=Cw type=text size=10 value=8> 字高
+    <input id=Ch type=text size=10 value=16>
+    <input type=button value="新建" onclick="newF()">
+    <input type=button value="导入" onclick="loadF()">
+    <input type=button value="样例" onclick="loadEx()">
+    <div style="width:100px; border-style:solid; border-width:1px; padding:0;" id=SC onmousemove="mMove();" onclick="mClick();"></div>
+    <textarea id=Ccs rows=10 cols=84></textarea>
+    <div id=Cxy></div>
+    <b>说明：</b>
+    <br> 1、点击“创建”，可以建立一个空白点阵字，字宽和字高依据输入框的设定值。注：字宽、字高是指行和列的点阵数。
+    <br> &nbsp;鼠标点击点阵，可以改变点阵状态。
+    <br> 2、点击“导入”，依据文本框输入的字模数据显示点阵字。
+    <br> 3、点击样例，则导入一个阻容串联“文字”
+</body>
+
+</html>
