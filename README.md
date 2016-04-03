@@ -1,2 +1,3 @@
-# picMod
-js实现的图像取模器
+## picMod
+
+#Simple Picture-modeling with method of web.
